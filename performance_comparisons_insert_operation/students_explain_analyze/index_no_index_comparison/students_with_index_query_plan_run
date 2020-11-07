@@ -1,0 +1,101 @@
+
+INSERTION WITH INDEX:
+
+QUERY PLAN:
+
+"Insert on ""Students""  (cost=45.61..544.68 rows=100000 width=1326) (actual time=5290.907..2190.911 rows=0 loops=1)"
+"  InitPlan 1 (returns $0)"
+"    ->  Result  (cost=0.00..0.03 rows=1 width=8) (actual time=0.003..0.004 rows=1 loops=1)"
+"  InitPlan 2 (returns $1)"
+"    ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)"
+"  InitPlan 3 (returns $2)"
+"    ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)"
+"  InitPlan 4 (returns $3)"
+"  ->  Seq Scan on ""Subjects""  (cost=0.00..44.50 rows=5 width=4) (actual time=0.179..0.179 rows=0 loops=1)"
+"          Filter: ((id)::double precision = round((random() * '100'::double precision)))"
+"          Rows Removed by Filter: 1000"
+"  InitPlan 5 (returns $4)"
+"    ->  Result  (cost=0.00..0.03 rows=1 width=8) (actual time=0.002..0.002 rows=1 loops=1)"
+"  InitPlan 6 (returns $5)"
+"    ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.001 rows=1 loops=1)"
+"  ->  ProjectSet  (cost=0.00..500.07 rows=100000 width=1326) (actual time=0.195..295.339 rows=100000 loops=1)"
+"        ->  Result  (cost=0.00..0.01 rows=1 width=0) (actual time=0.000..0.001 rows=1 loops=1)"
+"Planning Time: 0.191 ms"
+"Trigger for constraint student_to_subject_rel: time=73.696 calls=100000"
+"Execution Time: 51659.104 ms ms"
+
+Successfully run. Total query runtime: 5 secs 659 msec.
+1 rows affected.
+
+"[
+  {
+    ""Plan"": {
+      ""Node Type"": ""ModifyTable"",
+      ""Operation"": ""Insert"",
+      ""Parallel Aware"": false,
+      ""Relation Name"": ""Students"",
+      ""Alias"": ""Students"",
+      ""Plans"": [
+        {
+          ""Node Type"": ""Result"",
+          ""Parent Relationship"": ""InitPlan"",
+          ""Subplan Name"": ""InitPlan 1 (returns $0)"",
+          ""Parallel Aware"": false
+        },
+        {
+          ""Node Type"": ""Result"",
+          ""Parent Relationship"": ""InitPlan"",
+          ""Subplan Name"": ""InitPlan 2 (returns $1)"",
+          ""Parallel Aware"": false
+        },
+        {
+          ""Node Type"": ""Result"",
+          ""Parent Relationship"": ""InitPlan"",
+          ""Subplan Name"": ""InitPlan 3 (returns $2)"",
+          ""Parallel Aware"": false
+        },
+        {
+          ""Node Type"": ""Function Scan"",
+          ""Parent Relationship"": ""InitPlan"",
+          ""Subplan Name"": ""InitPlan 4 (returns $3)"",
+          ""Parallel Aware"": false,
+          ""Function Name"": ""generate_series"",
+          ""Alias"": ""seq""
+        },
+        {
+          ""Node Type"": ""Seq Scan"",
+          ""Parent Relationship"": ""InitPlan"",
+          ""Subplan Name"": ""InitPlan 5 (returns $4)"",
+          ""Parallel Aware"": false,
+          ""Relation Name"": ""Subjects"",
+          ""Alias"": ""Subjects"",
+          ""Filter"": ""((id)::double precision = round((random() * '100'::double precision)))""
+        },
+        {
+          ""Node Type"": ""Result"",
+          ""Parent Relationship"": ""InitPlan"",
+          ""Subplan Name"": ""InitPlan 6 (returns $5)"",
+          ""Parallel Aware"": false
+        },
+        {
+          ""Node Type"": ""Result"",
+          ""Parent Relationship"": ""InitPlan"",
+          ""Subplan Name"": ""InitPlan 7 (returns $6)"",
+          ""Parallel Aware"": false
+        },
+        {
+          ""Node Type"": ""ProjectSet"",
+          ""Parent Relationship"": ""Member"",
+          ""Parallel Aware"": false,
+          ""Plans"": [
+            {
+              ""Node Type"": ""Result"",
+              ""Parent Relationship"": ""Outer"",
+              ""Parallel Aware"": false
+            }
+          ]
+        }
+      ]
+    }
+  }
+]"

@@ -1,0 +1,48 @@
+INSERTION WITH AND WITHOUT INDEX ANALYSIS:
+
+Run results are:
+
+Results table:
+
+Without index before insertion:
+"Insert on ""Results""  (cost=3898.81..8898.83 rows=1000000 width=24) (actual time=4611.016..4611.019 rows=0 loops=1)"
+"Planning Time: 0.168 ms"
+"Execution Time: 25082.434 ms"
+
+With index before insertion:
+"Insert on ""Results""  (cost=3898.81..8898.83 rows=1000000 width=24) (actual time=8531.664..8531.666 rows=0 loops=1)"
+"Planning Time: 0.285 ms"
+"Execution Time: 30140.724 ms"
+
+Students table:
+
+Without index before insertion:
+"Insert on ""Students""  (cost=44.61..544.68 rows=100000 width=1326) (actual time=2190.907..2190.911 rows=0 loops=1)"
+"Planning Time: 0.168 ms"
+"Execution Time: 3499.104 ms"
+
+With index before insertion:
+"Insert on ""Students""  (cost=45.61..544.68 rows=100000 width=1326) (actual time=8290.907..2190.911 rows=0 loops=1)"
+"Planning Time: 0.191 ms"
+"Execution Time: 51659.104 ms ms"
+
+Subjects table:
+
+Without index before insertion:
+"Insert on ""Subjects""  (cost=0.00..5.05 rows=1000 width=932) (actual time=5.894..5.895 rows=0 loops=1)"
+"Planning Time: 0.098 ms"
+"Execution Time: 6.017 ms"
+
+With index before insertion:
+"Insert on ""Subjects""  (cost=0.00..5.05 rows=1000 width=932) (actual time=27.616..27.617 rows=0 loops=1)"
+"Planning Time: 0.100 ms"
+"Execution Time: 27.765 ms"
+
+
+
+SUMMARY:
+As far as we can see from execution plan and execution plan run results that insertion operation on  1K to 1 million rows is a bit longer with indexes as fragmentation of db extensions applied. 
+Also we can notice that costs are bigger with indexes in the begining. 
+So I would say a question use or not to use indexes is a question of purpose of DB.
+If it expects to work mostly on INSERT or UPDATE we need to be Cateful with Indexes as it could have an influence on performance. 
+But if it mostly search and filtering - its more suitable to use Indexes in your DB as they have significant impact on performance of such kind of operations.

@@ -1,0 +1,105 @@
+Analysis of search queries:
+
+a. Find user by name (exact match)
+
+SELECT id, name, surname, gender, date_of_birth, primary_phone_number, secondary_phone_number, email, subject_id, create_datetime, update_datetime
+	FROM public."Students" 
+	WHERE public."Students".name = 'b758a746487f681cffbf7151be5433a8';
+	
+EXPLAIN ANALYZE RUN:
+"Seq Scan on ""Students""  (cost=0.00..3953.00 rows=1 width=176) (actual time=0.011..16.741 rows=1 loops=1)"
+"  Filter: ((name)::text = 'b758a746487f681cffbf7151be5433a8'::text)"
+"  Rows Removed by Filter: 99999"
+"Planning Time: 0.810 ms"
+"Execution Time: 16.760 ms"	
+
+Analysis: performed sequential scan on all table as far as there is no index on this current column. 
+
+
+b. Find user by surname (partial match)
+
+SELECT id, name, surname, gender, date_of_birth, primary_phone_number, secondary_phone_number, email, subject_id, create_datetime, update_datetime
+	FROM public."Students" 
+	WHERE public."Students".surname = '031811db4108efdbb%';
+
+EXPLAIN ANALYZE RUN:
+"Index Scan using student_surname_search on ""Students""  (cost=0.00..8.02 rows=1 width=176) (actual time=0.046..0.046 rows=0 loops=1)"
+"  Index Cond: ((surname)::text = '031811db4108efdbb%'::text)"
+"Planning Time: 0.115 ms"
+"Execution Time: 0.059 ms"
+
+Analysis: performed index scan. Hash index used for search in this column as far as it good math to work with text fields. Works good with absolute match or 
+partial match.
+
+Another case:
+
+SELECT id, name, surname, gender, date_of_birth, primary_phone_number, secondary_phone_number, email, subject_id, create_datetime, update_datetime
+	FROM public."Students" 
+	WHERE public."Students".surname LIKE '%031811db4108efdbb%';
+	
+EXPLAIN ANALYZE RUN:	
+"Index Scan using student_surname_search on ""Students""  (cost=0.00..8.02 rows=1 width=176) (actual time=0.021..0.021 rows=0 loops=1)"
+"  Index Cond: ((surname)::text = '%031811db4108efdbb%'::text)"
+"Planning Time: 0.129 ms"
+"Execution Time: 0.040 ms"
+
+Analysis: performed table scan. Hash index don't work with partial match cases.
+
+c. Find user by phone number (partial match)
+
+SELECT id, name, surname, gender, date_of_birth, primary_phone_number, secondary_phone_number, email, subject_id, create_datetime, update_datetime
+	FROM public."Students" s 
+	WHERE s.primary_phone_number LIKE '%0375% OR' s.secondary_phone_number LIKE '%0375%';
+	
+EXPLAIN ANALYZE RUN:
+"Seq Scan on ""Students""  (cost=0.00..3953.00 rows=1 width=176) (actual time=0.011..16.741 rows=1 loops=1)"
+"  Filter: ((primary_phone_number)::text = '%0375%'::text)"
+"Seq Scan on ""Students""  (cost=0.00..3953.00 rows=1 width=176) (actual time=0.011..16.741 rows=1 loops=1)"
+"  Filter: ((secondary_phone_number)::text = '%0375%'::text)"
+"Planning Time: 0.125 ms"
+"Execution Time: 0.069 ms"	
+
+Analysis: performed sequential scan on all table as far as there is no index on this current column.
+
+d. Find user with marks by user surname (partial match)
+
+SELECT s.name AS student_name, s.surname AS student_surname , r.grade AS Marks
+	FROM public."Students" s 
+	RIGHT JOIN public."Results" r
+	ON s.id = r.student_id
+	WHERE s.surname = '031811db4108efdbb849%' AND s.name LIKE '%6487f681cffbf7151be5433a8';
+
+EXPLAIN ANALYZE RUN:
+"Gather  (cost=1008.03..11675.49 rows=10 width=70) (actual time=147.749..151.146 rows=0 loops=1)"
+"  Workers Planned: 2"
+"  Workers Launched: 2"
+"  ->  Hash Join  (cost=8.03..10674.49 rows=4 width=70) (actual time=0.137..0.138 rows=0 loops=3)"
+"        Hash Cond: (r.student_id = s.id)"
+"        ->  Parallel Seq Scan on ""Results"" r  (cost=0.00..9572.67 rows=416667 width=8) (actual time=0.016..0.016 rows=1 loops=3)"
+"        ->  Hash  (cost=8.02..8.02 rows=1 width=70) (actual time=0.027..0.028 rows=0 loops=3)"
+"              Buckets: 1024  Batches: 1  Memory Usage: 8kB"
+"              ->  Index Scan using student_surname_search on ""Students"" s  (cost=0.00..8.02 rows=1 width=70) (actual time=0.027..0.027 rows=0 loops=3)"
+"                    Index Cond: ((surname)::text = '031811db4108efdbb849%'::text)"
+"                    Filter: ((name)::text ~~ '%6487f681cffbf7151be5433a8'::text)"
+"Planning Time: 1.019 ms"
+"Execution Time: 151.181 ms"
+
+Analysis: performed mixed sequential and index scan on table (please find deatails in Sequential_and_index_search.svg).
+
+SUMMARY:
+
+So we can see that Hash index good option to perform searches with text field. And as far as you can see the results of run time is much better that from p. a, where we executed search by absolute match what is easier, but without index scan it took more time (p.b). 
+So indexes need to be applied in fiels mostly used for search. But still there is an issue with partial search.
+
+
+
+
+
+
+
+
+
+
+
+
+

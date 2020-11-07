@@ -1,0 +1,120 @@
+INSERTION WITHOUT INDEX:
+
+QUERY PLAN:
+
+
+"Insert on ""Students""  (cost=44.61..544.68 rows=100000 width=1326) (actual time=2190.907..2190.911 rows=0 loops=1)"
+"  InitPlan 1 (returns $0)"
+"    ->  Result  (cost=0.00..0.03 rows=1 width=8) (actual time=0.003..0.004 rows=1 loops=1)"
+"  InitPlan 2 (returns $1)"
+"    ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)"
+"  InitPlan 3 (returns $2)"
+"    ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=1)"
+"  InitPlan 4 (returns $3)"
+"    ->  Seq Scan on ""Subjects""  (cost=0.00..44.50 rows=5 width=4) (actual time=0.024..0.203 rows=1 loops=1)"
+"          Filter: ((id)::double precision = round((random() * '100'::double precision)))"
+"          Rows Removed by Filter: 999"
+"  InitPlan 5 (returns $4)"
+"    ->  Result  (cost=0.00..0.03 rows=1 width=8) (actual time=0.002..0.002 rows=1 loops=1)"
+"  InitPlan 6 (returns $5)"
+"    ->  Result  (cost=0.00..0.02 rows=1 width=8) (actual time=0.001..0.001 rows=1 loops=1)"
+"  ->  ProjectSet  (cost=0.00..500.07 rows=100000 width=1326) (actual time=0.222..383.293 rows=100000 loops=1)"
+"        ->  Result  (cost=0.00..0.01 rows=1 width=0) (actual time=0.000..0.001 rows=1 loops=1)"
+"Planning Time: 0.168 ms"
+"Trigger for constraint student_to_subject_rel: time=1295.757 calls=100000"
+"Execution Time: 3499.104 ms"
+
+Successfully run. Total query runtime: 3 secs 669 msec.
+1 rows affected.
+
+"[
+  {
+    ""Plan"": {
+      ""Node Type"": ""ModifyTable"",
+      ""Operation"": ""Insert"",
+      ""Parallel Aware"": false,
+      ""Relation Name"": ""Students"",
+      ""Alias"": ""Students"",
+      ""Actual Rows"": 0,
+      ""Actual Loops"": 1,
+      ""Plans"": [
+        {
+          ""Node Type"": ""Result"",
+          ""Parent Relationship"": ""InitPlan"",
+          ""Subplan Name"": ""InitPlan 1 (returns $0)"",
+          ""Parallel Aware"": false,
+          ""Actual Rows"": 1,
+          ""Actual Loops"": 1
+        },
+        {
+          ""Node Type"": ""Result"",
+          ""Parent Relationship"": ""InitPlan"",
+          ""Subplan Name"": ""InitPlan 2 (returns $1)"",
+          ""Parallel Aware"": false,
+          ""Actual Rows"": 1,
+          ""Actual Loops"": 1
+        },
+        {
+          ""Node Type"": ""Result"",
+          ""Parent Relationship"": ""InitPlan"",
+          ""Subplan Name"": ""InitPlan 3 (returns $2)"",
+          ""Parallel Aware"": false,
+          ""Actual Rows"": 1,
+          ""Actual Loops"": 1
+        },
+        {
+          ""Node Type"": ""Seq Scan"",
+          ""Parent Relationship"": ""InitPlan"",
+          ""Subplan Name"": ""InitPlan 4 (returns $3)"",
+          ""Parallel Aware"": false,
+          ""Relation Name"": ""Subjects"",
+          ""Alias"": ""Subjects"",
+          ""Actual Rows"": 1,
+          ""Actual Loops"": 1,
+          ""Filter"": ""((id)::double precision = round((random() * '100'::double precision)))"",
+          ""Rows Removed by Filter"": 999
+        },
+        {
+          ""Node Type"": ""Result"",
+          ""Parent Relationship"": ""InitPlan"",
+          ""Subplan Name"": ""InitPlan 5 (returns $4)"",
+          ""Parallel Aware"": false,
+          ""Actual Rows"": 1,
+          ""Actual Loops"": 1
+        },
+        {
+          ""Node Type"": ""Result"",
+          ""Parent Relationship"": ""InitPlan"",
+          ""Subplan Name"": ""InitPlan 6 (returns $5)"",
+          ""Parallel Aware"": false,
+          ""Actual Rows"": 1,
+          ""Actual Loops"": 1
+        },
+        {
+          ""Node Type"": ""ProjectSet"",
+          ""Parent Relationship"": ""Member"",
+          ""Parallel Aware"": false,
+          ""Actual Rows"": 100000,
+          ""Actual Loops"": 1,
+          ""Plans"": [
+            {
+              ""Node Type"": ""Result"",
+              ""Parent Relationship"": ""Outer"",
+              ""Parallel Aware"": false,
+              ""Actual Rows"": 1,
+              ""Actual Loops"": 1
+            }
+          ]
+        }
+      ]
+    },
+    ""Triggers"": [
+      {
+        ""Trigger Name"": ""RI_ConstraintTrigger_c_16430"",
+        ""Constraint Name"": ""student_to_subject_rel"",
+        ""Relation"": ""Students"",
+        ""Calls"": 100000
+      }
+    ]
+  }
+]"

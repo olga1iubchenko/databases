@@ -1,0 +1,47 @@
+	INSERTION WITHOUT INDEX:
+	
+	QUERY PLAN:
+	
+	"Insert on ""Subjects""  (cost=0.00..5.05 rows=1000 width=932) (actual time=5.894..5.895 rows=0 loops=1)"
+"  ->  ProjectSet  (cost=0.00..5.05 rows=1000 width=932) (actual time=0.025..1.708 rows=1000 loops=1)"
+"        ->  Result  (cost=0.00..0.01 rows=1 width=0) (actual time=0.000..0.001 rows=1 loops=1)"
+"Planning Time: 0.098 ms"
+"Execution Time: 6.017 ms"
+
+Successfully run. Total query runtime: 80 msec.
+5 rows affected.
+
+"[
+  {
+    ""Plan"": {
+      ""Node Type"": ""ModifyTable"",
+      ""Operation"": ""Insert"",
+      ""Parallel Aware"": false,
+      ""Relation Name"": ""Subjects"",
+      ""Alias"": ""Subjects"",
+      ""Actual Rows"": 0,
+      ""Actual Loops"": 1,
+      ""Plans"": [
+        {
+          ""Node Type"": ""ProjectSet"",
+          ""Parent Relationship"": ""Member"",
+          ""Parallel Aware"": false,
+          ""Actual Rows"": 1000,
+          ""Actual Loops"": 1,
+          ""Plans"": [
+            {
+              ""Node Type"": ""Result"",
+              ""Parent Relationship"": ""Outer"",
+              ""Parallel Aware"": false,
+              ""Actual Rows"": 1,
+              ""Actual Loops"": 1
+            }
+          ]
+        }
+      ]
+    },
+    ""Triggers"": []
+  }
+]"
+	
+	

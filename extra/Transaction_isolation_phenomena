@@ -1,0 +1,114 @@
+The isolation level of a transaction, in PostgreSQL, can be one of:
+
+Read Committed
+Repeatable Read
+Serializable
+Every transaction has it’s isolation level set to one of these when it is created. The default level is “read committed”.
+
+Note that the SQL standard also defines “read uncommitted”, which is not supported in Postgres. You have to use the nearest, higher level of “read committed”.
+
+Let’s see what these levels mean.
+
+Read Committed
+What happens when one (unfinished) transaction inserts rows in a table and the other (also unfinished) transaction tries to read all rows in the table? If the second transaction is able to see the rows inserted by the first, then that read is called a dirty read – because the first transaction can rollback and the second transaction would have read “phantom” rows that never existed.
+
+The read committed isolation level guarantees that dirty reads will never happen. Here is an example:
+
+$ psql test                                                    $ psql test                                                   
+psql (10.3 (Debian 10.3-1.pgdg90+1))                           psql (10.3 (Debian 10.3-1.pgdg90+1))                          
+Type "help" for help.                                          Type "help" for help.                                         
+                                                                                                                             
+test=> create table t (a int, b int);                          test=> select * from t;                                       
+CREATE TABLE                                                    a | b                                                        
+test=> begin;                                                  ---+---                                                       
+BEGIN                                                          (0 rows)                                                      
+test=> insert into t values (1, 100);                                                                                        
+INSERT 0 1                                                     test=>                                                        
+test=>       
+
+As you can see, the second transaction could not read the first transaction’s as-yet-uncommitted data. In PostgreSQL, it is not possible to lower the isolation level to below this level so that dirty reads are allowed.
+
+Repeatable Read
+Yet another problem is that of non-repeatable reads. These happen when a transaction reads a row, and then reads it again a bit later but gets a different result – because the row was updated in between by another transaction. The read has become non-repeatable, as shown in this example:
+
+test=> begin;                                                  test=> begin;                                                 
+BEGIN                                                          BEGIN                                                         
+test=> select * from t;                                        test=> select * from t;                                       
+ a |  b                                                         a |  b                                                       
+---+-----                                                      ---+-----                                                     
+ 1 | 100                                                        1 | 100                                                      
+(1 row)                                                        (1 row)                                                       
+                                                                                                                             
+test=> select * from t;                                        test=> update t set b=200 where a=1;                          
+ a |  b                                                        UPDATE 1                                                      
+---+-----                                                      test=> commit;                                                
+ 1 | 200                                                       COMMIT                                                        
+(1 row)                                                        test=>                                                        
+                                                                                                                             
+test=>                                                                                
+                                                               
+To fix this problem, set the isolation level of the transaction to “repeatable read”. PostgreSQL will then ensure that the second (or any) read will also return the same result as the first read. Here is the same scenario at the upgraded isolation level: 
+
+test=> begin transaction isolation level repeatable read;      test=> begin;                                                 
+BEGIN                                                          BEGIN                                                         
+test=> select * from t;                                        test=> select * from t;                                       
+ a |  b                                                         a |  b                                                       
+---+-----                                                      ---+-----                                                     
+ 1 | 100                                                        1 | 100                                                      
+(1 row)                                                        (1 row)                                                       
+                                                                                                                             
+test=> select * from t;                                        test=> update t set b=200 where a=1;                          
+ a |  b                                                        UPDATE 1                                                      
+---+-----                                                      test=> select * from t;                                       
+ 1 | 100                                                        a |  b                                                       
+(1 row)                                                        ---+-----                                                     
+                                                                1 | 200                                                      
+test=>                                                         (1 row)                                                       
+                                                                                                                             
+                                                               test=> commit;                                                
+                                                               COMMIT                                                        
+                                                               test=>  
+															   
+Serializable
+The next isolation level addresses the problem of lost updates. Updates performed in one transaction can be “lost”, or overwritten by another transaction that happens to run concurrently, as shown here:
+
+test=> begin;                                                  test=> begin;                                                 
+BEGIN                                                          BEGIN                                                         
+test=> select * from t;                                        test=> select * from t;                                       
+ a |  b                                                         a |  b                                                       
+---+-----                                                      ---+-----                                                     
+ 1 | 100                                                        1 | 100                                                      
+(1 row)                                                        (1 row)                                                       
+                                                                                                                             
+test=> update t set b=200 where a=1;                           test=> update t set b=300 where a=1;                          
+UPDATE 1                                                       UPDATE 1                                                      
+test=> commit;                                                 test=> commit;                                                
+COMMIT                                                         COMMIT                                                        
+test=> select * from t;                                        test=> select * from t;                                       
+ a |  b                                                         a |  b                                                       
+---+-----                                                      ---+-----                                                     
+ 1 | 300                                                        1 | 300                                                      
+(1 row)                                                        (1 row)                                                       
+                                                                                                                             
+test=>                                                         test=>   
+
+Here the second transaction’s UPDATE blocks, because PostgreSQL places a lock to prevent another update until the first transaction is finished. However, the first transaction’s change is lost, because the second one “overwrote” the row.
+
+If this sort of behavior is not acceptable, you can upgrade the isolation level to serializable:
+test=> begin;                                                  test=> begin transaction isolation level serializable;        
+BEGIN                                                          BEGIN                                                         
+test=> select * from t;                                        test=> select * from t;                                       
+ a |  b                                                         a |  b                                                       
+---+-----                                                      ---+-----                                                     
+ 1 | 100                                                        1 | 100                                                      
+(1 row)                                                        (1 row)                                                       
+                                                                                                                             
+test=> update t set b=200 where a=1;                           test=> update t set b=300 where a=1;                          
+UPDATE 1                                                       ERROR:  could not serialize access due to concurrent update   
+test=> commit;                                                 test=>                                                        
+COMMIT                                                                                                                       
+test=>                                                                                                                       
+                                                                                                                             
+At this level, the commit of the second transaction fails. The second transaction’s actions were based on facts that were rendered invalid by the time it was about to commit.
+
+While serialization provides the highest level of safety, it also means that the application has to detect such commit failures and retry the entire transaction.                                                               

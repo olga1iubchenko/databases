@@ -1,0 +1,30 @@
+Index Types
+
+Postgres supports many different index types:
+
+B-Tree is the default that you get when you do CREATE INDEX. Virtually all databases will have some B-tree indexes. B-trees attempt to remain balanced, with the amount of data in each branch of the tree being roughly the same. Therefore the number of levels that must be traversed to find rows is always in the same ballpark. B-tree indexes can be used for equality and range queries efficiently. They can operate against all datatypes, and can also be used to retrieve NULL values. B-trees are designed to work very well with caching, even when only partially cached.
+
+Hash Indexes pre-Postgres 10 are only useful for equality comparisons, but you pretty much never want to use them since they are not transaction safe, need to be manually rebuilt after crashes, and are not replicated to followers, so the advantage over using a B-Tree is rather small. In Postgres 10 and above, hash indexes are now write-ahead logged and replicated to followers.
+
+Generalized Inverted Indexes (GIN) are useful when an index must map many values to one row, whereas B-Tree indexes are optimized for when a row has a single key value. GINs are good for indexing array values as well as for implementing full-text search.
+
+Generalized Search Tree (GiST) indexes allow you to build general balanced tree structures, and can be used for operations beyond equality and range comparisons. They are used to index the geometric data types, as well as full-text search.
+This article is about how to get the most out of default B-Tree indexes. For examples of GIN and GiST index usage, refer to the contrib packages.
+
+HOW TO WORK WITH INDEXES In POSTGRES:
+
+Indexes in Postgres do not hold all row data. Even when an index is used in a query and matching rows where found, Postgres will go to disk to fetch the row data. Additionally, row visibility information is not stored on the index either, therefore Postgres must also go to disk to fetch that information.
+
+Having that in mind, you can see how in some cases using an index doesn’t really make sense. An index must be selective enough to reduce the number of disk lookups for it to be worth it. For example, a primary key lookup with a big enough table makes good use of an index: instead of sequentially scanning the table matching the query conditions, Postgres is able to find the targeted rows in an index, and then fetch them from disk selectively. For very small tables, for example a cities lookup table, an index may be undesirable, even if you search by city name. In that case, Postgres may decide to ignore the index in favor of a sequential scan. Postgres will decide to perform a sequential scan on any query that will hit a significant portion of a table. If you do have an index on that column, it will be a dead index that’s never used - and indexes are not free: they come at a cost in terms of storage and maintenance.
+
+For more on running production, staging, and other environments for your Heroku application, take a look at our Managing Multiple Environments article.
+
+When tuning a query and understanding what indexes make the most sense, be sure to use a database as similar as possible to what exists, or will exist in production. Whether an index is used or not depends on a number of factors, including the Postgres server configuration, the data in the table, the index and the query. For instance, trying to make a query use an index on your development machine with a small subset of “test data” will be frustrating: Postgres will determine that the dataset is so small that it’s not worth the overhead of reading through the index and then fetching the data from disk. Random I/O is much slower than sequential, so the cost of a sequential scan is lower than that of the random I/O introduced by reading the index and selectively finding the data on disk. Performing index tuning should be done on production, or on a staging environment that is as close to production as possible. On the Heroku Postgres database platform it is possible to copy your production database to a different environment quite easily.
+
+When you are ready to apply an index on your production database, keep in mind that creating an index locks the table against writes. For big tables that can mean your site is down for hours. Fortunately Postgres allows you to CREATE INDEX CONCURRENTLY, which will take much longer to build, but does not require a lock that blocks writes. Ordinary CREATE INDEX commands require a lock that blocks writes but not reads.
+
+Finally, indexes will become fragmented and unoptimized after some time, especially if the rows in the table are often updated or deleted. In those cases it may be required to perform a REINDEX leaving you with a balanced and optimized index. However be cautious about reindexing big indexes as write locks are obtained on the parent table. One strategy to achieve the same result on a live site is to build an index concurrently on the same table and columns but with a different name, and then dropping the original index and renaming the new one. This procedure, while much longer, won’t require any long running locks on the live tables.
+
+Postgres provides a lot of flexibility when it comes to creating B-tree indexes that are optimized to your specific use cases, as well as options for managing the ever-growing database behind your applications. These tips should help you keep your database healthy, and your queries snappy.
+
+NOTE: Please find performance results and investigation in RESULTS_... file and EXPLAIN ANALYZE investigation materials.
